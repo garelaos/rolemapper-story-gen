@@ -278,7 +278,7 @@ Follow the full user story format exactly as specified: Feature Description, Pur
     try {
       abortRef.current = new AbortController();
 
-      const response = await fetch('/v1/messages', {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
