@@ -29,8 +29,7 @@ function Field({ label, id, required, hint, error, children }) {
   return (
     <div className="field-group">
       <label className="field-label" htmlFor={id}>
-        {label}
-        {required && <span className="field-required"> *</span>}
+        <span>{label}{required && <span className="field-required"> *</span>}</span>
         {hint && <span className="field-hint">{hint}</span>}
       </label>
       {children}
