@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { buildContext } from './contextUtils';
 
-async function generateExampleBriefs(ctx, apiKey) {
+async function generateExampleBriefs(ctx) {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
@@ -74,10 +71,7 @@ export default function ProjectSetup({ onComplete, onCancel, initialValues }) {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    const apiKey = process.env.REACT_APP_ANTHROPIC_API_KEY;
-    const exampleBriefs = (apiKey && apiKey !== 'your_api_key_here')
-      ? await generateExampleBriefs(fields, apiKey)
-      : [];
+    const exampleBriefs = await generateExampleBriefs(fields);
     // Preserve the existing ID when editing so project history is retained
     onComplete({ ...fields, exampleBriefs, id: initialValues?.id || Date.now().toString() });
   };

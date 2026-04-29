@@ -301,12 +301,6 @@ export default function App() {
   const generate = async () => {
     if (!brief.trim()) return;
 
-    const apiKey = process.env.REACT_APP_ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_api_key_here') {
-      setError('API key not configured. Add REACT_APP_ANTHROPIC_API_KEY to your .env.local file.');
-      return;
-    }
-
     setLoading(true);
     setError('');
     setOutput('');
@@ -328,13 +322,10 @@ Follow the full user story format exactly as specified: Feature Description, Pur
     try {
       abortRef.current = new AbortController();
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
