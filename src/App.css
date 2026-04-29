@@ -403,6 +403,8 @@
 
 .example-chip {
   display: block;
+  max-height: calc(1.5em * 4 + 20px);
+  overflow: hidden;
   width: 100%;
   text-align: left;
   padding: 10px 14px;

@@ -16,7 +16,7 @@ async function generateExampleBriefs(ctx, apiKey) {
         max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `Based on this product context, write exactly 3 concrete example feature briefs that a product manager might submit to generate a user story. Make them specific and realistic for this product. Output one brief per line with no numbering, bullets, or labels.\n\n${buildContext(ctx)}`,
+          content: `Based on this product context, write exactly 3 concrete example feature briefs that a product manager might submit to generate a user story. Each brief must be a single sentence of no more than 35 words. Make them specific and realistic for this product. Output one brief per line with no numbering, bullets, or labels.\n\n${buildContext(ctx)}`,
         }],
       }),
     });
