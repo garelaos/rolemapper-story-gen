@@ -9,10 +9,10 @@
   --text-primary: #1A1814;
   --text-secondary: #6B6560;
   --text-muted: #9B968F;
-  --teal: #1D9E75;
-  --teal-dark: #0F6E56;
-  --teal-light: #E1F5EE;
-  --teal-mid: #9FE1CB;
+  --accent: #E8642A;
+  --accent-dark: #BF4E1E;
+  --accent-light: #FEF0E8;
+  --accent-mid: #F5C4A5;
   --amber: #C47B1A;
   --amber-light: #FDF3E3;
   --red: #C0392B;
@@ -37,7 +37,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: var(--teal-light); color: var(--teal-dark); }
+::selection { background: var(--accent-light); color: var(--accent-dark); }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

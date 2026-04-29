@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import SYSTEM_PROMPT from './systemPrompt';
-import { WORKFLOW_AREAS, PERSONAS, MVP_PHASES, STORY_TYPES } from './config';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import SYSTEM_PROMPT from './systemPrompt_generic';
+import { STORY_TYPES } from './config';
+import ProjectSetup from './ProjectSetup';
+import { parseWorkflows, parsePersonas, parsePhases, buildContext } from './contextUtils';
 import './App.css';
 
-const HISTORY_KEY = 'rm_story_history';
+const CONTEXT_KEY = 'story_gen_context';
 
 function extractTitle(output) {
   const match = output.match(/^#{1,3} (.+)$/m);
@@ -183,9 +185,25 @@ function CopyButton({ text }) {
 
 // --- Main App ---
 export default function App() {
-  const [workflow, setWorkflow] = useState(WORKFLOW_AREAS[0].value);
-  const [persona, setPersona] = useState(PERSONAS[0].value);
-  const [phase, setPhase] = useState(MVP_PHASES[0].value);
+  const [projectContext, setProjectContext] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(CONTEXT_KEY)) || null; }
+    catch { return null; }
+  });
+  const [isEditing, setIsEditing] = useState(false);
+
+  // History is scoped per project so switching products gives a clean slate
+  const historyKey = useMemo(
+    () => projectContext?.id ? `story_gen_history_${projectContext.id}` : null,
+    [projectContext]
+  );
+
+  const workflowOptions = useMemo(() => parseWorkflows(projectContext?.keyWorkflows || ''), [projectContext]);
+  const personaOptions  = useMemo(() => parsePersonas(projectContext?.personas || ''),    [projectContext]);
+  const phaseOptions    = useMemo(() => parsePhases(projectContext?.phaseNames || ''),    [projectContext]);
+
+  const [workflow, setWorkflow] = useState('');
+  const [persona, setPersona] = useState('');
+  const [phase, setPhase] = useState('');
   const [storyType, setStoryType] = useState(STORY_TYPES[0].value);
   const [brief, setBrief] = useState('');
   const [output, setOutput] = useState('');
@@ -193,12 +211,26 @@ export default function App() {
   const [error, setError] = useState('');
   const [hasGenerated, setHasGenerated] = useState(false);
   const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-    catch { return []; }
+    try {
+      const ctx = JSON.parse(localStorage.getItem(CONTEXT_KEY));
+      const key = ctx?.id ? `story_gen_history_${ctx.id}` : null;
+      return key ? JSON.parse(localStorage.getItem(key)) || [] : [];
+    } catch { return []; }
   });
   const [activeHistoryId, setActiveHistoryId] = useState(null);
   const outputRef = useRef(null);
   const abortRef = useRef(null);
+
+  // Reset dropdown to first option when project context changes
+  useEffect(() => {
+    if (workflowOptions.length) setWorkflow(workflowOptions[0].value);
+  }, [workflowOptions]);
+  useEffect(() => {
+    if (personaOptions.length) setPersona(personaOptions[0].value);
+  }, [personaOptions]);
+  useEffect(() => {
+    if (phaseOptions.length) setPhase(phaseOptions[0].value);
+  }, [phaseOptions]);
 
   useEffect(() => {
     if (output && outputRef.current) {
@@ -206,7 +238,25 @@ export default function App() {
     }
   }, [output]);
 
+  const handleSetupComplete = (ctx) => {
+    localStorage.setItem(CONTEXT_KEY, JSON.stringify(ctx));
+    const isNewProject = ctx.id !== projectContext?.id;
+    setProjectContext(ctx);
+    setIsEditing(false);
+    if (isNewProject) {
+      setHistory([]);
+      setHasGenerated(false);
+      setOutput('');
+      setError('');
+      setActiveHistoryId(null);
+    }
+  };
+
+  const handleEditProject = () => setIsEditing(true);
+  const handleCancelEdit = () => setIsEditing(false);
+
   const saveToHistory = (fullOutput) => {
+    if (!historyKey) return;
     const entry = {
       id: Date.now().toString(),
       title: extractTitle(fullOutput),
@@ -220,7 +270,7 @@ export default function App() {
     };
     setHistory(prev => {
       const updated = [entry, ...prev];
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      localStorage.setItem(historyKey, JSON.stringify(updated));
       return updated;
     });
     setActiveHistoryId(entry.id);
@@ -242,7 +292,7 @@ export default function App() {
     e.stopPropagation();
     setHistory(prev => {
       const updated = prev.filter(item => item.id !== id);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
       return updated;
     });
     if (activeHistoryId === id) setActiveHistoryId(null);
@@ -263,14 +313,14 @@ export default function App() {
     setHasGenerated(true);
     setActiveHistoryId(null);
 
-    const userPrompt = `Generate a complete RoleMapper user story for the following feature brief.
+    const userPrompt = `Generate a complete user story for the following feature brief.
 
 Feature brief: ${brief}
 
 Parameters:
 - Workflow area: ${workflow}
 - Primary persona: ${persona}
-- MVP phase: ${phase}
+- Phase: ${phase}
 - Story type: ${storyType}
 
 Follow the full user story format exactly as specified: Feature Description, Purpose, Outcome, User Story (blockquote), What Happens (bullets), Critical Elements (bullets), Acceptance Criteria (Given/When/Then), and Product Notes with all four subsections (Technical dependencies, Phase scoping, Compliance and integrity risks, Open questions).`;
@@ -290,7 +340,7 @@ Follow the full user story format exactly as specified: Feature Description, Pur
           model: 'claude-sonnet-4-6',
           max_tokens: 8096,
           stream: true,
-          system: SYSTEM_PROMPT,
+          system: SYSTEM_PROMPT(buildContext(projectContext)),
           messages: [{ role: 'user', content: userPrompt }],
         }),
         signal: abortRef.current.signal,
@@ -341,21 +391,39 @@ Follow the full user story format exactly as specified: Feature Description, Pur
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') generate();
   };
 
+  if (!projectContext || isEditing) {
+    return (
+      <ProjectSetup
+        onComplete={handleSetupComplete}
+        onCancel={projectContext ? handleCancelEdit : null}
+        initialValues={projectContext}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="logo">
-            <span className="logo-mark">RM</span>
-            <span className="logo-text">RoleMapper</span>
+            <span className="logo-mark">ST</span>
+            <div className="logo-text-stack">
+              <span className="logo-text">Storytime</span>
+              <span className="logo-tagline">User stories, done properly.</span>
+            </div>
           </div>
-          <p className="sidebar-tagline">User story generator</p>
+          {projectContext.projectName && (
+            <p className="sidebar-project-name">{projectContext.projectName}</p>
+          )}
+          <button className="btn-edit-project" onClick={handleEditProject}>
+            Edit project
+          </button>
         </div>
 
         <div className="sidebar-body">
-          <Select label="Workflow area" value={workflow} onChange={setWorkflow} options={WORKFLOW_AREAS} />
-          <Select label="Primary persona" value={persona} onChange={setPersona} options={PERSONAS} />
-          <Select label="MVP phase" value={phase} onChange={setPhase} options={MVP_PHASES} />
+          <Select label="Workflow area" value={workflow} onChange={setWorkflow} options={workflowOptions} />
+          <Select label="Primary persona" value={persona} onChange={setPersona} options={personaOptions} />
+          <Select label="Phase" value={phase} onChange={setPhase} options={phaseOptions} />
           <Select label="Story type" value={storyType} onChange={setStoryType} options={STORY_TYPES} />
 
           <div className="field-group brief-group">
@@ -368,7 +436,7 @@ Follow the full user story format exactly as specified: Feature Description, Pur
               value={brief}
               onChange={e => setBrief(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Describe the feature in 1–3 sentences. E.g. 'A bulk upload screen where comp analysts can upload a CSV of roles for mass evaluation, with error flagging for any that need manual review.'"
+              placeholder="Describe the feature in 1–3 sentences."
               rows={6}
             />
             <div className="char-count">{brief.length} characters</div>
@@ -431,8 +499,8 @@ Follow the full user story format exactly as specified: Feature Description, Pur
 
         <div className="sidebar-footer">
           <p className="footer-note">
-            Intelligence is defined in <code>systemPrompt.js</code>.<br />
-            Add dropdowns in <code>config.js</code>.
+            Context is set at project setup.<br />
+            Story type options are in <code>config.js</code>.
           </p>
         </div>
       </aside>
@@ -458,22 +526,20 @@ Follow the full user story format exactly as specified: Feature Description, Pur
               Fill in the form and describe your feature.<br />
               Stories include Product Notes flagging dependencies,<br />scope risks, and open questions.
             </p>
-            <div className="examples">
-              <p className="examples-label">Example briefs</p>
-              {[
-                'A bulk upload screen for uploading a CSV of roles for mass evaluation, with error flagging for roles needing manual review',
-                'A pay equity heatmap showing gender pay gaps by job family and level, filterable by business area',
-                'An admin screen for configuring which job families and tracks are active in the framework',
-              ].map((ex, idx) => (
-                <button
-                  key={idx}
-                  className="example-chip"
-                  onClick={() => setBrief(ex)}
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
+            {projectContext.exampleBriefs?.length > 0 && (
+              <div className="examples">
+                <p className="examples-label">Example briefs</p>
+                {projectContext.exampleBriefs.map((ex, idx) => (
+                  <button
+                    key={idx}
+                    className="example-chip"
+                    onClick={() => setBrief(ex)}
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

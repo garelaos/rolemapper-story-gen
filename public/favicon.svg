@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <circle cx="16" cy="16" r="16" fill="#1D9E75"/>
+  <circle cx="16" cy="16" r="16" fill="#E8642A"/>
   <text
     x="16"
     y="20.5"
@@ -9,5 +9,5 @@
     font-weight="500"
     letter-spacing="0.5"
     fill="white"
-  >RM</text>
+  >ST</text>
 </svg>
