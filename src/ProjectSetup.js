@@ -110,7 +110,7 @@ export default function ProjectSetup({ onComplete, onCancel, initialValues }) {
                 className={`field-input${errors.projectName ? ' field-input-error' : ''}`}
                 value={fields.projectName}
                 onChange={e => set('projectName', e.target.value)}
-                placeholder="e.g. RoleMapper, Acme CRM, Payments Platform"
+                placeholder="e.g. Acme CRM, Payments Platform, Mobile Analytics App, New Side Hustle 😉"
               />
             </Field>
 
@@ -166,7 +166,7 @@ export default function ProjectSetup({ onComplete, onCancel, initialValues }) {
                   className={`field-input${errors.phaseNames ? ' field-input-error' : ''}`}
                   value={fields.phaseNames}
                   onChange={e => set('phaseNames', e.target.value)}
-                  placeholder="e.g. MVP, Phase 2, Backlog"
+                  placeholder="Experiment/POC, Prototype, MVP, New Feature"
                 />
               </Field>
             </div>
