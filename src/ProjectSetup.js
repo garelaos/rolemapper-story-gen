@@ -147,29 +147,27 @@ export default function ProjectSetup({ onComplete, onCancel, initialValues }) {
               />
             </Field>
 
-            <div className="setup-row">
-              <Field label="Phase scope" id="phaseScope" required error={errors.phaseScope}>
-                <textarea
-                  id="phaseScope"
-                  className={`field-textarea${errors.phaseScope ? ' field-textarea-error' : ''}`}
-                  value={fields.phaseScope}
-                  onChange={e => set('phaseScope', e.target.value)}
-                  placeholder="What is in scope now, and what is explicitly out of scope"
-                  rows={3}
-                />
-              </Field>
+            <Field label="Phase scope" id="phaseScope" required error={errors.phaseScope}>
+              <textarea
+                id="phaseScope"
+                className={`field-textarea${errors.phaseScope ? ' field-textarea-error' : ''}`}
+                value={fields.phaseScope}
+                onChange={e => set('phaseScope', e.target.value)}
+                placeholder="What is in scope now, and what is explicitly out of scope"
+                rows={3}
+              />
+            </Field>
 
-              <Field label="Phase names" id="phaseNames" required hint="Comma-separated" error={errors.phaseNames}>
-                <input
-                  type="text"
-                  id="phaseNames"
-                  className={`field-input${errors.phaseNames ? ' field-input-error' : ''}`}
-                  value={fields.phaseNames}
-                  onChange={e => set('phaseNames', e.target.value)}
-                  placeholder="Experiment/POC, Prototype, MVP, New Feature"
-                />
-              </Field>
-            </div>
+            <Field label="Phase names" id="phaseNames" required hint="Comma-separated" error={errors.phaseNames}>
+              <input
+                type="text"
+                id="phaseNames"
+                className={`field-input${errors.phaseNames ? ' field-input-error' : ''}`}
+                value={fields.phaseNames}
+                onChange={e => set('phaseNames', e.target.value)}
+                placeholder="Experiment/POC, Prototype, MVP, New Feature"
+              />
+            </Field>
           </div>
 
           <div className="setup-section setup-section-optional">
