@@ -164,7 +164,7 @@ export default function ProjectSetup({ onComplete, onCancel, initialValues }) {
                 className={`field-input${errors.phaseNames ? ' field-input-error' : ''}`}
                 value={fields.phaseNames}
                 onChange={e => set('phaseNames', e.target.value)}
-                placeholder="Experiment/POC, Prototype, MVP, New Feature"
+                placeholder="e.g. Experiment/POC, Prototype, MVP, New Feature"
               />
             </Field>
           </div>
